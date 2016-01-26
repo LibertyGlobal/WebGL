@@ -4,14 +4,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   define('ABSPATH', dirname(__FILE__));
   include ABSPATH . '/webgl-conformance-tests.config.php';
 
-  error_reporting(E_ALL);
-  ini_set('display_errors', 0);
-  
   if (defined('WGLTS_DEBUG') && WGLTS_DEBUG) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 0);
     ini_set('log_errors', 1);
     ini_set('error_log', ABSPATH . '/debug.log');
   } else {
-    ini_set('log_errors', 0);
+    error_reporting(E_CORE_ERROR | E_CORE_WARNING | E_COMPILE_ERROR | E_ERROR | E_WARNING | E_PARSE | E_USER_ERROR | E_USER_WARNING | E_RECOVERABLE_ERROR);
+    ini_set('display_errors', 0);
   }
 
   /* AJAX check  */
