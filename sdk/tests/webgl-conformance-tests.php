@@ -365,7 +365,7 @@ function start() {
         var successCode = "failed";
       }
       
-      this.results.push({msg: msg, success: successCode});
+      this.results.push({msg: msg.substr(0, 2000), success: successCode});
       
       if (successCode === "success") {
         // don't report success.
@@ -377,7 +377,7 @@ function start() {
           url: this.url,
           pageNo: this.testIndex,
           startTime: this.startTime,
-          msg: msg
+          msg: msg.substr(0, 20000)
         });
       }
 
@@ -867,7 +867,7 @@ function start() {
         
         sendReport('finishTest:error', {
           startTime: new Date(this.startTime).toUTCString(),
-          msg: msg
+          msg: msg.substr(0, 20000)
         });
         
         this.postResultsToServer(msg);
