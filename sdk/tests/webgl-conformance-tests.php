@@ -277,20 +277,37 @@ function start() {
       var report = {
         report: report_type,
         suiteID: suiteID,
-        runID: timer.getStartTime(),
-        timestamp: timer.getMillis(),
+        runID: sendReport.prototype.runID,
+        timestamp: Math.floor(timer.getMillis()),
         data: report_data || {}
       };
       xhr.send(JSON.stringify(report));
     }
+    sendReport.prototype.runID = Date.now() & 0x7FFFFFFF;
 
     var Timer = function () {
       this.startT = 0;
     }
     
-    Timer.prototype.now = function () {
-      return Date.now();
-    };
+    Timer.prototype.now = (function () {
+      var performance = window.performance || {};
+      
+      performance.now = performance.now || 
+                        performance.mozNow || 
+                        performance.msNow || 
+                        performance.oNow || 
+                        performance.webkitNow;
+      
+      if (performance.now !== undefined) {
+        return function () {
+          return performance.now();
+        };
+      }
+      
+      return function() {
+        return Date.now();
+      };
+    })();
     
     Timer.prototype.start = function () {
       this.startT = this.now();
@@ -400,7 +417,7 @@ function start() {
         sendReport('testTimeout', {
           url: this.url,
           pageNo: this.testIndex,
-          startTime: this.startTime,
+          testNo: this.totalTests,
           msg: msg.substr(0, 20000)
         });
       }
@@ -437,8 +454,7 @@ function start() {
         
         sendReport('startPage', {
           url: this.url,
-          pageNo: this.testIndex,
-          startTime: this.startTime
+          pageNo: this.testIndex
         });
       }
 
@@ -475,7 +491,6 @@ function start() {
       sendReport('finishPage', {
         url: this.url,
         pageNo: this.testIndex,
-        startTime: this.startTime,
         totalTime: this.totalTime,
         totalTests: this.totalTests,
         totalSuccessful: this.totalSuccessful,
@@ -883,7 +898,7 @@ function start() {
           totalTests: totalTests,
           totalSuccessful: totalSuccessful,
           totalTimeouts: totalTimeouts,
-          totalSkipped: totalSkipped,
+          totalSkipped: totalSkipped
         });
 
         this.postResultsToServer(tx);
