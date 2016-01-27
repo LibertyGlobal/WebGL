@@ -438,6 +438,8 @@ function start() {
         msg = '(*timeout*)';
         ++this.totalTests;
         ++this.totalTimeouts;
+        
+        this.results.push({msg: msg, success: "timeout"});
       } else if (this.totalSkipped) {
         var css = 'testpageskipped';
       } else if (this.totalSuccessful != this.totalTests) {
