@@ -277,13 +277,37 @@ function start() {
       var report = {
         report: report_type,
         suiteID: suiteID,
-        runID: reporter.startTime,
-        timestamp: Date.now(),
+        runID: timer.getStartTime(),
+        timestamp: timer.getMillis(),
         data: report_data || {}
       };
       xhr.send(JSON.stringify(report));
     }
 
+    var Timer = function () {
+      this.startT = 0;
+    }
+    
+    Timer.prototype.now = function () {
+      return Date.now();
+    };
+    
+    Timer.prototype.start = function () {
+      this.startT = this.now();
+    };
+    
+    Timer.prototype.getStartTime = function () {
+      return this.startT;
+    };
+    
+    Timer.prototype.getMillis = function () {
+      var stopT = this.now();
+      if (this.startT === 0) {
+        this.startT = stopT;
+      }
+      return stopT - this.startT;
+    };
+    
     var reportType = WebGLTestHarnessModule.TestHarness.reportType;
     var pageCount = 0;
     var folderCount = 0;
@@ -409,7 +433,7 @@ function start() {
         this.elem.classList.remove('testpageskipped');
         this.elem.classList.remove('testpagefail');
         this.elem.classList.remove('testpagesuccess');
-        this.startTime = Date.now();
+        this.startTime = timer.getMillis();
         
         sendReport('startPage', {
           url: this.url,
@@ -426,7 +450,7 @@ function start() {
     };
 
     Page.prototype.finishPage = function (success) {
-      this.totalTime = Date.now() - this.startTime;
+      this.totalTime = timer.getMillis() - this.startTime;
       if (this.totalSkipped) {
         var msg = ' (' + this.totalSkipped + ' of ' + this.totalTests + ' skipped in ' + this.totalTime.toFixed(1) + ' ms )';
       } else {
@@ -776,7 +800,7 @@ function start() {
         var totalSuccessful = 0;
         var totalTimeouts = 0;
         var totalSkipped = 0;
-        var totalTime = Date.now() - this.startTime;
+        var totalTime = timer.getMillis() - this.startTime;
         for (var url in this.pagesByURL) {
           var page = this.pagesByURL[url];
           totalTests += page.totalTests;
@@ -877,7 +901,7 @@ function start() {
     };
 
     Reporter.prototype.postTestStartToServer = function (resultText) {
-      this.startTime = Date.now();
+      this.startTime = timer.getMillis();
       
       sendReport('startTest', {
         startTime: new Date(this.startTime).toUTCString(),
@@ -910,6 +934,8 @@ function start() {
     };
 
     Reporter.prototype.ready = function () {
+      timer.start();
+      
       var loading = document.getElementById("loading");
       loading.style.display = "none";
       if (!this.noSelectedWebGLVersion) {
@@ -1001,6 +1027,8 @@ function start() {
     }
 
     makeVersionSelect(OPTIONS.version);
+    
+    var timer = new Timer();
 
     // Make iframes
     var makeIFrames = function () {
