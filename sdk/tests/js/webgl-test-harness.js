@@ -544,13 +544,20 @@ TestHarness.prototype.runTests = function(opt_options) {
   options.start = options.start || 0;
   options.count = options.count || this.files.length;
 
+  if (options.start >= this.files.length) {
+    log("no more tests to run");
+    this.reportFunc(TestHarness.reportType.FINISHED_ALL_TESTS, '', '', true);
+    return;
+  }
+
   this.idleIFrames = this.iframes.slice(0);
   this.runningTests = {};
   var testsToRun = [];
   for (var ii = 0; ii < options.count; ++ii) {
     testsToRun.push(ii + options.start);
   }
-  this.numTestsRemaining = options.count;
+  var tests_end = Math.min(options.start + options.count, this.files.length);
+  this.numTestsRemaining = tests_end - options.start;
   this.testsToRun = testsToRun;
   this.startNextTest();
 };

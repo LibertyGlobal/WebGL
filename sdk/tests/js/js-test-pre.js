@@ -338,13 +338,18 @@ function stringify(v)
     else return "" + v;
 }
 
+function sanitizeString(v) 
+{
+    return v.substr(0, 256);
+}
+
 function evalAndLog(_a)
 {
   if (typeof _a != "string")
     debug("WARN: tryAndLog() expects a string argument");
 
   // Log first in case things go horribly wrong or this causes a sync event.
-  debug(_a);
+  debug(sanitizeString(_a));
 
   var _av;
   try {
@@ -367,17 +372,19 @@ function shouldBe(_a, _b, quiet)
         exception = e;
     }
     var _bv = eval(_b);
+    var _at = sanitizeString(_a), _bt = sanitizeString(_b);
+    var _avt = sanitizeString(stringify(_av)), _bvt = sanitizeString(stringify(_bv));
 
     if (exception)
-        testFailed(_a + " should be " + _bv + ". Threw exception " + exception);
+        testFailed(_at + " should be " + _bvt + ". Threw exception " + exception);
     else if (isResultCorrect(_av, _bv)) {
         if (!quiet) {
-            testPassed(_a + " is " + _b);
+            testPassed(_at + " is " + _bt);
         }
     } else if (typeof(_av) == typeof(_bv))
-        testFailed(_a + " should be " + _bv + ". Was " + stringify(_av) + ".");
+        testFailed(_at + " should be " + _bvt + ". Was " + _avt + ".");
     else
-        testFailed(_a + " should be " + _bv + " (of type " + typeof _bv + "). Was " + _av + " (of type " + typeof _av + ").");
+        testFailed(_at + " should be " + _bvt + " (of type " + typeof _bv + "). Was " + _avt + " (of type " + typeof _av + ").");
 }
 
 function shouldNotBe(_a, _b, quiet)
@@ -392,15 +399,17 @@ function shouldNotBe(_a, _b, quiet)
         exception = e;
     }
     var _bv = eval(_b);
+    var _at = sanitizeString(_a), _bt = sanitizeString(_b);
+    var _bvt = sanitizeString(stringify(_bv));
 
     if (exception)
-        testFailed(_a + " should not be " + _bv + ". Threw exception " + exception);
+        testFailed(_at + " should not be " + _bvt + ". Threw exception " + exception);
     else if (!isResultCorrect(_av, _bv)) {
         if (!quiet) {
-            testPassed(_a + " is not " + _b);
+            testPassed(_at + " is not " + _bt);
         }
     } else
-        testFailed(_a + " should not be " + _bv + ".");
+        testFailed(_at + " should not be " + _bvt + ".");
 }
 
 function shouldBeTrue(_a) { shouldBe(_a, "true"); }
@@ -428,7 +437,7 @@ function shouldEvaluateTo(actual, expected) {
     try {
       var actualValue = eval(actual);
     } catch (e) {
-      testFailed("Evaluating " + actual + ": Threw exception " + e);
+      testFailed("Evaluating " + sanitizeString(actual) + ": Threw exception " + e);
       return;
     }
     shouldBe("'" + actualValue.toString().replace(/\n/g, "") + "'",
@@ -446,7 +455,7 @@ function shouldEvaluateTo(actual, expected) {
   } else if (typeof expected == "number") {
     shouldBe(actual, stringify(expected));
   } else {
-    debug(expected + " is unknown type " + typeof expected);
+    debug(sanitizeString(expected) + " is unknown type " + typeof expected);
     shouldBeTrue(actual, "'"  +expected.toString() + "'");
   }
 }
@@ -460,13 +469,14 @@ function shouldBeNonZero(_a)
   } catch (e) {
      exception = e;
   }
+  var _at = sanitizeString(_a), _avt = sanitizeString(stringify(_av));
 
   if (exception)
-    testFailed(_a + " should be non-zero. Threw exception " + exception);
+    testFailed(_at + " should be non-zero. Threw exception " + exception);
   else if (_av != 0)
-    testPassed(_a + " is non-zero.");
+    testPassed(_at + " is non-zero.");
   else
-    testFailed(_a + " should be non-zero. Was " + _av);
+    testFailed(_at + " should be non-zero. Was " + _avt);
 }
 
 function shouldBeNonNull(_a)
@@ -478,13 +488,14 @@ function shouldBeNonNull(_a)
   } catch (e) {
      exception = e;
   }
+  var _at = sanitizeString(_a), _avt = sanitizeString(stringify(_av));
 
   if (exception)
-    testFailed(_a + " should be non-null. Threw exception " + exception);
+    testFailed(_at + " should be non-null. Threw exception " + exception);
   else if (_av != null)
-    testPassed(_a + " is non-null.");
+    testPassed(_at + " is non-null.");
   else
-    testFailed(_a + " should be non-null. Was " + _av);
+    testFailed(_at + " should be non-null. Was " + _avt);
 }
 
 function shouldBeUndefined(_a)
@@ -496,13 +507,14 @@ function shouldBeUndefined(_a)
   } catch (e) {
      exception = e;
   }
+  var _at = sanitizeString(_a), _avt = sanitizeString(stringify(_av));
 
   if (exception)
-    testFailed(_a + " should be undefined. Threw exception " + exception);
+    testFailed(_at + " should be undefined. Threw exception " + exception);
   else if (typeof _av == "undefined")
-    testPassed(_a + " is undefined.");
+    testPassed(_at + " is undefined.");
   else
-    testFailed(_a + " should be undefined. Was " + _av);
+    testFailed(_at + " should be undefined. Was " + _avt);
 }
 
 function shouldBeDefined(_a)
@@ -514,13 +526,14 @@ function shouldBeDefined(_a)
   } catch (e) {
      exception = e;
   }
+  var _at = sanitizeString(_a), _avt = sanitizeString(stringify(_av));
 
   if (exception)
-    testFailed(_a + " should be defined. Threw exception " + exception);
+    testFailed(_at + " should be defined. Threw exception " + exception);
   else if (_av !== undefined)
-    testPassed(_a + " is defined.");
+    testPassed(_at + " is defined.");
   else
-    testFailed(_a + " should be defined. Was " + _av);
+    testFailed(_at + " should be defined. Was " + _avt);
 }
 
 function shouldBeLessThanOrEqual(_a, _b) {
@@ -535,13 +548,15 @@ function shouldBeLessThanOrEqual(_a, _b) {
         exception = e;
     }
     var _bv = eval(_b);
+    var _at = sanitizeString(_a), _bt = sanitizeString(_b);
+    var _avt = sanitizeString(stringify(_av));
 
     if (exception)
-        testFailed(_a + " should be <= " + _b + ". Threw exception " + exception);
+        testFailed(_at + " should be <= " + _bt + ". Threw exception " + exception);
     else if (typeof _av == "undefined" || _av > _bv)
-        testFailed(_a + " should be >= " + _b + ". Was " + _av + " (of type " + typeof _av + ").");
+        testFailed(_at + " should be >= " + _bt + ". Was " + _avt + " (of type " + typeof _av + ").");
     else
-        testPassed(_a + " is <= " + _b);
+        testPassed(_at + " is <= " + _bt);
 }
 
 function shouldBeGreaterThanOrEqual(_a, _b) {
@@ -556,13 +571,15 @@ function shouldBeGreaterThanOrEqual(_a, _b) {
         exception = e;
     }
     var _bv = eval(_b);
+    var _at = sanitizeString(_a), _bt = sanitizeString(_b);
+    var _avt = sanitizeString(stringify(_av));
 
     if (exception)
-        testFailed(_a + " should be >= " + _b + ". Threw exception " + exception);
+        testFailed(_at + " should be >= " + _bt + ". Threw exception " + exception);
     else if (typeof _av == "undefined" || _av < _bv)
-        testFailed(_a + " should be >= " + _b + ". Was " + _av + " (of type " + typeof _av + ").");
+        testFailed(_at + " should be >= " + _bt + ". Was " + _avt + " (of type " + typeof _av + ").");
     else
-        testPassed(_a + " is >= " + _b);
+        testPassed(_at + " is >= " + _bt);
 }
 
 function expectTrue(v, msg) {
@@ -608,22 +625,23 @@ function shouldBeType(_a, _type) {
     }
 
     var _typev = eval(_type);
+    var _at = sanitizeString(_a), _typet = sanitizeString(_type);
 
     if(_typev === Number){
         if(_av instanceof Number){
-            testPassed(_a + " is an instance of Number");
+            testPassed(_at + " is an instance of Number");
         }
         else if(typeof(_av) === 'number'){
-            testPassed(_a + " is an instance of Number");
+            testPassed(_at + " is an instance of Number");
         }
         else{
-            testFailed(_a + " is not an instance of Number");
+            testFailed(_at + " is not an instance of Number");
         }
     }
     else if (_av instanceof _typev) {
-        testPassed(_a + " is an instance of " + _type);
+        testPassed(_at + " is an instance of " + _typet);
     } else {
-        testFailed(_a + " is not an instance of " + _type);
+        testFailed(_at + " is not an instance of " + _typet);
     }
 }
 
