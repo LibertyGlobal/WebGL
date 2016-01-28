@@ -267,6 +267,10 @@ function start() {
     }
     
     function sendReport(report_type, report_data, opt_async, opt_url) {
+      if (OPTIONS.sendReport == undefined || OPTIONS.sendReport == 0) {
+        return;
+      }
+      
       var xhr = new XMLHttpRequest();
       if (opt_async === undefined) opt_async = true;
       if (opt_url === undefined) opt_url = window.location.href;
