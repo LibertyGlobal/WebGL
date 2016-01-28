@@ -340,7 +340,7 @@ function stringify(v)
 
 function sanitizeString(v) 
 {
-    return v.substr(0, 256);
+    return stringify(v).substr(0, 256);
 }
 
 function evalAndLog(_a)
@@ -355,7 +355,7 @@ function evalAndLog(_a)
   try {
      _av = eval(_a);
   } catch (e) {
-    testFailed(_a + " threw exception " + e);
+    testFailed(sanitizeString(_a) + " threw exception " + e);
   }
   return _av;
 }
@@ -373,7 +373,7 @@ function shouldBe(_a, _b, quiet)
     }
     var _bv = eval(_b);
     var _at = sanitizeString(_a), _bt = sanitizeString(_b);
-    var _avt = sanitizeString(stringify(_av)), _bvt = sanitizeString(stringify(_bv));
+    var _avt = sanitizeString(_av), _bvt = sanitizeString(_bv);
 
     if (exception)
         testFailed(_at + " should be " + _bvt + ". Threw exception " + exception);
@@ -400,7 +400,7 @@ function shouldNotBe(_a, _b, quiet)
     }
     var _bv = eval(_b);
     var _at = sanitizeString(_a), _bt = sanitizeString(_b);
-    var _bvt = sanitizeString(stringify(_bv));
+    var _bvt = sanitizeString(_bv);
 
     if (exception)
         testFailed(_at + " should not be " + _bvt + ". Threw exception " + exception);
@@ -469,7 +469,7 @@ function shouldBeNonZero(_a)
   } catch (e) {
      exception = e;
   }
-  var _at = sanitizeString(_a), _avt = sanitizeString(stringify(_av));
+  var _at = sanitizeString(_a), _avt = sanitizeString(_av);
 
   if (exception)
     testFailed(_at + " should be non-zero. Threw exception " + exception);
@@ -488,7 +488,7 @@ function shouldBeNonNull(_a)
   } catch (e) {
      exception = e;
   }
-  var _at = sanitizeString(_a), _avt = sanitizeString(stringify(_av));
+  var _at = sanitizeString(_a), _avt = sanitizeString(_av);
 
   if (exception)
     testFailed(_at + " should be non-null. Threw exception " + exception);
@@ -507,7 +507,7 @@ function shouldBeUndefined(_a)
   } catch (e) {
      exception = e;
   }
-  var _at = sanitizeString(_a), _avt = sanitizeString(stringify(_av));
+  var _at = sanitizeString(_a), _avt = sanitizeString(_av);
 
   if (exception)
     testFailed(_at + " should be undefined. Threw exception " + exception);
@@ -526,7 +526,7 @@ function shouldBeDefined(_a)
   } catch (e) {
      exception = e;
   }
-  var _at = sanitizeString(_a), _avt = sanitizeString(stringify(_av));
+  var _at = sanitizeString(_a), _avt = sanitizeString(_av);
 
   if (exception)
     testFailed(_at + " should be defined. Threw exception " + exception);
@@ -549,7 +549,7 @@ function shouldBeLessThanOrEqual(_a, _b) {
     }
     var _bv = eval(_b);
     var _at = sanitizeString(_a), _bt = sanitizeString(_b);
-    var _avt = sanitizeString(stringify(_av));
+    var _avt = sanitizeString(_av);
 
     if (exception)
         testFailed(_at + " should be <= " + _bt + ". Threw exception " + exception);
@@ -572,7 +572,7 @@ function shouldBeGreaterThanOrEqual(_a, _b) {
     }
     var _bv = eval(_b);
     var _at = sanitizeString(_a), _bt = sanitizeString(_b);
-    var _avt = sanitizeString(stringify(_av));
+    var _avt = sanitizeString(_av);
 
     if (exception)
         testFailed(_at + " should be >= " + _bt + ". Threw exception " + exception);
