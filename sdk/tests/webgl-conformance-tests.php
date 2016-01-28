@@ -455,12 +455,13 @@ function start() {
         this.elem.classList.remove('testpagefail');
         this.elem.classList.remove('testpagesuccess');
         this.startTime = timer.getMillis();
-        
-        sendReport('startPage', {
-          url: this.url,
-          pageNo: this.testIndex
-        });
       }
+      
+      sendReport('startPage', {
+        url: this.url,
+        pageNo: this.testIndex,
+        shouldRun: shouldRun
+      });
 
       return this.check.checked && this.folder.checked();
     };
