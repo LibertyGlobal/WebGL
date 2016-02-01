@@ -50,7 +50,7 @@ texture-npot-video.html
 --max-version 1.9.9 texture-npot.html
 texture-size.html
 texture-size-cube-maps.html
---min-version 1.0.2 texture-size-limit.html
+# --min-version 1.0.2 texture-size-limit.html
 --min-version 1.0.2 texture-sub-image-cube-maps.html
 texture-transparent-pixels-initialized.html
 --min-version 1.0.2 texture-upload-cube-maps.html
