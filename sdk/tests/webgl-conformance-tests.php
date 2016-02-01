@@ -930,7 +930,9 @@ function start() {
         totalCount: testHarness.files.length,
         version: OPTIONS.version,
         timeoutDelay: testHarness.timeoutDelay,
-        context: this.contextInfo
+        context: this.contextInfo,
+        userAgent: navigator.userAgent,
+        platform: navigator.platform
       });
       
       if (OPTIONS.postResults == undefined || OPTIONS.postResults == 0) {
