@@ -267,6 +267,10 @@ function start() {
     }
     
     function sendReport(report_type, report_data, opt_async, opt_url) {
+      if (OPTIONS.sendReport == undefined || OPTIONS.sendReport == 0) {
+        return;
+      }
+      
       var xhr = new XMLHttpRequest();
       if (opt_async === undefined) opt_async = true;
       if (opt_url === undefined) opt_url = window.location.href;
@@ -451,12 +455,13 @@ function start() {
         this.elem.classList.remove('testpagefail');
         this.elem.classList.remove('testpagesuccess');
         this.startTime = timer.getMillis();
-        
-        sendReport('startPage', {
-          url: this.url,
-          pageNo: this.testIndex
-        });
       }
+      
+      sendReport('startPage', {
+        url: this.url,
+        pageNo: this.testIndex,
+        shouldRun: shouldRun
+      });
 
       return this.check.checked && this.folder.checked();
     };
