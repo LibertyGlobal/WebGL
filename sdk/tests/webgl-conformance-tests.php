@@ -24,13 +24,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     
     if (defined('WGLTS_REPORT_URL') && WGLTS_REPORT_URL) {
+      $postdata = http_build_query(array(
+        'jsonContent' => $content,
+      ), '', '&');
       $ch = curl_init(WGLTS_REPORT_URL);
       curl_setopt($ch, CURLOPT_POST, 1);
-      curl_setopt($ch, CURLOPT_POSTFIELDS, $content);
+      curl_setopt($ch, CURLOPT_POSTFIELDS, $postdata);
       curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
+      error_log('Sending report to ' . WGLTS_REPORT_URL . '...');
       $response = curl_exec($ch);
+      $info = curl_getinfo($ch);
       curl_close($ch);
+      if ($response === false) {
+        error_log('Send failed: ' . PHP_EOL . print_r($info, true));
+      } else {
+        error_log('Send succeeded: ' . $response . PHP_EOL . print_r($info, true));
+      }
     } else {
       $response = '0';
     }
