@@ -89,6 +89,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <title>WebGL Conformance Tests</title>
 <style>
   body {
+    background: #fff;
+    color: #000;
+  }
+  
+  body {
     border: 0;
     margin: 0;
     padding: 0;
