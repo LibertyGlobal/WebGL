@@ -349,7 +349,232 @@ function start() {
     var folderCount = 0;
     var autoScrollEnabled = true; // Whether the user prefers to auto scroll
     var autoScroll = true; // Whether auto scroll is actually performed
+    
+    var DefaultUI = function (localDoc) {
+      this.localDoc = localDoc;
+      this.pages = {};
+      this.folders = {};
+      this.reporterUI = {};
+    };
+    
+    DefaultUI.prototype.createElement = function (tag) {
+      return this.localDoc.createElement(tag);
+    };
+    
+    DefaultUI.prototype.createTextNode = function (data) {
+      return this.localDoc.createTextNode(data);
+    };
+    
+    DefaultUI.prototype.initializePage = function (pageObj) {
+      var url = pageObj.url;
+      var li = this.createElement('li');
+      li.id = pageObj.elementId;
+      var div = this.createElement('div');
+      div.classList.add('pageHeader');
+      var check = this.createElement('input');
+      check.type = 'checkbox';
+      check.checked = true;
+      div.appendChild(check);
+      var button = this.createElement('input');
+      button.type = 'button';
+      button.value = 'run';
+      button.onclick = function () {
+        autoScroll = false;
+        pageObj.reporter.runTest(url);
+      };
+      if (pageObj.reporter.noSelectedWebGLVersion) {
+        button.disabled = true;
+      }
+      div.appendChild(button);
+      var a = this.createElement('a');
+      a.href = WebGLTestHarnessModule.getURLWithOptions(url, {
+        webglVersion: pageObj.reporter.selectedWebGLVersion,
+        quiet: OPTIONS.quiet
+      });
+      a.target = "_blank";
+      var node = this.createTextNode(url);
+      a.appendChild(node);
+      div.appendChild(a);
+      li.setAttribute('class', 'testpage');
+      li.appendChild(div);
+      var ul = this.createElement('ul');
+      var node = this.createTextNode('');
+      li.appendChild(ul);
+      div.appendChild(node);
+      
+      this.pages[pageObj.elementId] = {
+        totalsElem: node,
+        resultElem: ul,
+        elem: li,
+        check: check
+      };
+    };
+    
+    DefaultUI.prototype.addResult = function (pageObj, msg, success, skipped) {
+      if (success === undefined) {
+        var result = "timeout";
+        var css = "timeout";
+      } else if (success) {
+        // don't report success.
+        return;
+      } else {
+        var result = "failed";
+        var css = "fail";
+      }
+      
+      var node = this.createTextNode(result + ': ' + msg);
+      var li = this.createElement('li');
+      li.appendChild(node);
+      li.setAttribute('class', css);
+      this.pages[pageObj.elementId].resultElem.appendChild(li);
+    };
 
+    DefaultUI.prototype.pageChecked = function (pageObj) {
+      return this.pages[pageObj.elementId].check.checked;
+    };
+
+    DefaultUI.prototype.setChecked = function (pageObj, value) {
+      this.pages[pageObj.elementId].check.checked = value;
+    };
+
+    DefaultUI.prototype.startPage = function (pageObj, shouldRun) {
+      var ui = this.pages[pageObj.elementId];
+      if (autoScroll && ui.elem.scrollIntoView) {
+        ui.elem.scrollIntoView(false);
+      }
+      // remove previous results.
+      while (ui.resultElem.hasChildNodes()) {
+        ui.resultElem.removeChild(ui.resultElem.childNodes[0]);
+      }
+      ui.totalsElem.textContent = '';
+
+      if (shouldRun) {
+        ui.elem.classList.remove('testpagetimeout');
+        ui.elem.classList.remove('testpageskipped');
+        ui.elem.classList.remove('testpagefail');
+        ui.elem.classList.remove('testpagesuccess');
+      }
+    };
+    
+    DefaultUI.prototype.finishPage = function (pageObj, success) {
+      var ui = this.pages[pageObj.elementId];
+      
+      if (pageObj.totalSkipped) {
+        var msg = ' (' + pageObj.totalSkipped + ' of ' + pageObj.totalTests + ' skipped in ' + pageObj.totalTime.toFixed(1) + ' ms )';
+      } else {
+        var msg = ' (' + pageObj.totalSuccessful + ' of ' + pageObj.totalTests + ' passed in ' + pageObj.totalTime.toFixed(1) + ' ms )';
+      }
+
+      if (success === undefined) {
+        var css = 'testpagetimeout';
+        msg = '(*timeout*)';
+      } else if (pageObj.totalSkipped) {
+        var css = 'testpageskipped';
+      } else if (pageObj.totalSuccessful != pageObj.totalTests) {
+        var css = 'testpagefail';
+      } else {
+        var css = 'testpagesuccess';
+      }
+      
+      ui.elem.classList.add(css);
+      ui.totalsElem.textContent = msg;
+    };
+
+    DefaultUI.prototype.initializeFolder = function (folderObj) {
+      var li = this.createElement('li');
+      li.id = folderObj.elementId;
+      li.classList.add("folder");
+      
+      var div = this.createElement('div');
+      div.classList.add('folderHeader');
+      
+      var check = this.createElement('input');
+      check.type = 'checkbox';
+      check.checked = true;
+      div.appendChild(check);
+      
+      var button = this.createElement('input');
+      button.type = 'button';
+      button.value = 'run';
+      button.onclick = function () {
+        autoScroll = autoScrollEnabled;
+        folderObj.run();
+      };
+      if (folderObj.reporter.noSelectedWebGLVersion) {
+        button.disabled = true;
+      }
+      div.appendChild(button);
+      
+      var h = this.createElement('span');
+      h.classList.add('folderName');
+      h.appendChild(this.createTextNode(folderObj.displayName));
+      div.appendChild(h);
+      
+      var m = this.createElement('span');
+      m.classList.add('folderMessage');
+      var msgNode = this.createTextNode('');
+      m.appendChild(msgNode);
+      div.appendChild(m);
+      
+      var ul = this.createElement('ul');
+      li.appendChild(div);
+      li.appendChild(ul);
+      
+      this.folders[folderObj.elementId] = {
+        childUL: ul,
+        elem: li,
+        check: check,
+        folderHeader: div,
+        msgNode: msgNode
+      };
+    };
+    
+    DefaultUI.prototype.folderChecked = function (folderObj) {
+      return this.folders[folderObj.elementId].check.checked;
+    };
+
+    DefaultUI.prototype.setFolderChecked = function (folderObj, value) {
+      this.folders[folderObj.elementId].check.checked = value;
+    };
+    
+    DefaultUI.prototype.runFolder = function (folderObj) {
+      this.folders[folderObj.elementId].msgNode.textContent = '';
+    };
+
+    DefaultUI.prototype.folderPageFinished = function (folderObj, page, success) {
+      var ui = this.folders[folderObj.elementId];
+      ui.msgNode.textContent = (folderObj.totalTime() / 1000).toFixed(2) + ' seconds';
+    };
+
+    DefaultUI.prototype.addSubFolder = function (folderObj, subFolderObj) {
+      var folderUI = this.folders[folderObj.elementId], subFolderUI = this.folders[subFolderObj.elementId];
+      folderUI.childUL.appendChild(subFolderUI.elem);
+    };
+
+    DefaultUI.prototype.addPage = function (folderObj, pageObj) {
+      var folderUI = this.folders[folderObj.elementId], pageUI = this.pages[pageObj.elementId];
+      folderUI.childUL.appendChild(pageUI.elem);
+      folderUI.folderHeader.classList.add('hasPages');
+    };
+
+    DefaultUI.prototype.initializeReporter = function (reporterObj) {
+      var resultElem = document.getElementById("results");
+      var fullResultsElem = document.getElementById("fullresults");
+      var node = this.localDoc.createTextNode('');
+      fullResultsElem.appendChild(node);
+      var fullResultsNode = node;
+      
+      var rootUI = this.folders[reporterObj.root.elementId];
+      resultElem.appendChild(rootUI.elem);
+      
+      this.reporterUI = {
+        resultElem: resultElem,
+        fullResultsElem: fullResultsElem,
+        fullResultsNode: fullResultsNode,
+        currentPageElem: null
+      };
+    };
+    
     var Page = function (reporter, folder, testIndex, url) {
       this.reporter = reporter;
       this.folder = folder;
@@ -364,52 +589,13 @@ function start() {
       this.results = [];
 
       this.elementId = "page" + pageCount++;
-      var li = reporter.localDoc.createElement('li');
-      li.id = this.elementId;
-      var div = reporter.localDoc.createElement('div');
-      div.classList.add('pageHeader');
-      var check = reporter.localDoc.createElement('input');
-      check.type = 'checkbox';
-      check.checked = true;
-      div.appendChild(check);
-      var button = reporter.localDoc.createElement('input');
-      button.type = 'button';
-      button.value = 'run';
-      button.onclick = function () {
-        autoScroll = false;
-        reporter.runTest(url);
-      };
-      if (reporter.noSelectedWebGLVersion) {
-        button.disabled = true;
-      }
-      div.appendChild(button);
-      var a = reporter.localDoc.createElement('a');
-      a.href = WebGLTestHarnessModule.getURLWithOptions(url, {
-        webglVersion: reporter.selectedWebGLVersion,
-        quiet: OPTIONS.quiet
-      });
-      a.target = "_blank";
-      var node = reporter.localDoc.createTextNode(url);
-      a.appendChild(node);
-      div.appendChild(a);
-      li.setAttribute('class', 'testpage');
-      li.appendChild(div);
-      var ul = reporter.localDoc.createElement('ul');
-      var node = reporter.localDoc.createTextNode('');
-      li.appendChild(ul);
-      div.appendChild(node);
-      this.totalsElem = node;
-      this.resultElem = ul;
-      this.elem = li;
-      this.check = check;
+      this.reporter.ui.initializePage(this);
     };
 
     Page.prototype.addResult = function (msg, success, skipped) {
       ++this.totalTests;
       if (success === undefined) {
         ++this.totalTimeouts;
-        var result = "timeout";
-        var css = "timeout";
         var successCode = "timeout";
       } else if (success) {
         if (skipped) {
@@ -420,18 +606,11 @@ function start() {
           ++this.totalSuccessful;
         }
       } else {
-        var result = "failed";
-        var css = "fail";
         var successCode = "failed";
       }
       
       this.results.push({msg: msg.substr(0, 2000), success: successCode});
       
-      if (successCode === "success") {
-        // don't report success.
-        return;
-      }
-
       if (successCode === "timeout") {
         sendReport('testTimeout', {
           url: this.url,
@@ -440,37 +619,23 @@ function start() {
           msg: msg.substr(0, 20000)
         });
       }
-
-      var node = this.reporter.localDoc.createTextNode(result + ': ' + msg);
-      var li = this.reporter.localDoc.createElement('li');
-      li.appendChild(node);
-      li.setAttribute('class', css);
-      this.resultElem.appendChild(li);
+      
+      this.reporter.ui.addResult(this, msg, success, skipped);
     };
 
     Page.prototype.startPage = function () {
-      if (autoScroll && this.elem.scrollIntoView) {
-        this.elem.scrollIntoView(false);
-      }
+      var shouldRun = this.reporter.ui.pageChecked(this) && this.folder.checked();
+      
       this.totalTests = 0;
       this.totalSuccessful = 0;
       this.totalTimeouts = 0;
       this.totalTime = 0;
-      // remove previous results.
-      while (this.resultElem.hasChildNodes()) {
-        this.resultElem.removeChild(this.resultElem.childNodes[0]);
-      }
-      this.totalsElem.textContent = '';
-
-      var shouldRun = this.check.checked && this.folder.checked();
 
       if (shouldRun) {
-        this.elem.classList.remove('testpagetimeout');
-        this.elem.classList.remove('testpageskipped');
-        this.elem.classList.remove('testpagefail');
-        this.elem.classList.remove('testpagesuccess');
         this.startTime = timer.getMillis();
       }
+      
+      this.reporter.ui.startPage(this, shouldRun);
       
       sendReport('startPage', {
         url: this.url,
@@ -478,7 +643,7 @@ function start() {
         shouldRun: shouldRun
       });
 
-      return this.check.checked && this.folder.checked();
+      return shouldRun;
     };
 
     Page.prototype.firstTestIndex = function () {
@@ -487,25 +652,12 @@ function start() {
 
     Page.prototype.finishPage = function (success) {
       this.totalTime = timer.getMillis() - this.startTime;
-      if (this.totalSkipped) {
-        var msg = ' (' + this.totalSkipped + ' of ' + this.totalTests + ' skipped in ' + this.totalTime.toFixed(1) + ' ms )';
-      } else {
-        var msg = ' (' + this.totalSuccessful + ' of ' + this.totalTests + ' passed in ' + this.totalTime.toFixed(1) + ' ms )';
-      }
 
       if (success === undefined) {
-        var css = 'testpagetimeout';
-        msg = '(*timeout*)';
         ++this.totalTests;
         ++this.totalTimeouts;
         
         this.results.push({msg: msg, success: "timeout"});
-      } else if (this.totalSkipped) {
-        var css = 'testpageskipped';
-      } else if (this.totalSuccessful != this.totalTests) {
-        var css = 'testpagefail';
-      } else {
-        var css = 'testpagesuccess';
       }
       
       sendReport('finishPage', {
@@ -519,26 +671,25 @@ function start() {
         results: this.results
       });
       
-      this.elem.classList.add(css);
-      this.totalsElem.textContent = msg;
+      this.reporter.ui.finishPage(this, success);
       this.folder.pageFinished(this, success);
     };
 
     Page.prototype.enableTest = function (re) {
       if (this.url.match(re)) {
-        this.check.checked = true;
+        this.reporter.ui.setChecked(this, true);
         this.folder.enableUp_();
       }
     };
 
     Page.prototype.disableTest = function (re) {
       if (this.url.match(re)) {
-        this.check.checked = false;
+        this.reporter.ui.setChecked(this, false);
       }
     };
     
     Page.prototype.checked = function () {
-      return this.check.checked;
+      return this.reporter.ui.pageChecked(this);
     };
     
     var Folder = function (reporter, folder, depth, opt_name) {
@@ -554,50 +705,13 @@ function start() {
       this.items = [];
       this.folder = folder;
       this.cachedTotalTime = 0;
-      var that = this;
 
-      var doc = reporter.localDoc;
       this.elementId = "folder" + folderCount++;
-      var li = doc.createElement('li');
-      li.id = this.elementId;
-      li.classList.add("folder");
-      var div = doc.createElement('div');
-      div.classList.add('folderHeader');
-      var check = doc.createElement('input');
-      check.type = 'checkbox';
-      check.checked = true;
-      div.appendChild(check);
-      var button = doc.createElement('input');
-      button.type = 'button';
-      button.value = 'run';
-      button.onclick = function () {
-        autoScroll = autoScrollEnabled;
-        that.run();
-      };
-      if (reporter.noSelectedWebGLVersion) {
-        button.disabled = true;
-      }
-      div.appendChild(button);
-      var h = doc.createElement('span');
-      h.classList.add('folderName');
-      h.appendChild(doc.createTextNode(this.displayName));
-      div.appendChild(h);
-      var m = doc.createElement('span');
-      m.classList.add('folderMessage');
-      this.msgNode = doc.createTextNode('');
-      m.appendChild(this.msgNode);
-      div.appendChild(m);
-      var ul = doc.createElement('ul');
-      li.appendChild(div);
-      li.appendChild(ul);
-      this.childUL = ul;
-      this.elem = li;
-      this.check = check;
-      this.folderHeader = div;
+      this.reporter.ui.initializeFolder(this);
     };
 
     Folder.prototype.checked = function () {
-      return this.check.checked &&
+      return this.reporter.ui.folderChecked(this) &&
               (this.folder ? this.folder.checked() : true);
     };
 
@@ -628,7 +742,7 @@ function start() {
     };
 
     Folder.prototype.run = function () {
-      this.msgNode.textContent = '';
+      this.reporter.ui.runFolder(this);
       var firstTestIndex = this.firstTestIndex();
       var count = this.numChildren();
       log("run tests: " + firstTestIndex + " to " + (firstTestIndex + count - 1))
@@ -637,7 +751,7 @@ function start() {
 
     Folder.prototype.pageFinished = function (page, success) {
       this.cachedTotalTime = -1;
-      this.msgNode.textContent = (this.totalTime() / 1000).toFixed(2) + ' seconds';
+      this.reporter.ui.folderPageFinished(this, page, success);
       if (this.folder) {
         this.folder.pageFinished(page, success);
       }
@@ -649,7 +763,7 @@ function start() {
         subFolder = new Folder(this.reporter, this, this.depth + 1, name);
         this.subFolders[name] = subFolder;
         this.items.push(subFolder);
-        this.childUL.appendChild(subFolder.elem);
+        this.reporter.ui.addSubFolder(this, subFolder);
       }
       return subFolder;
     };
@@ -666,14 +780,13 @@ function start() {
     Folder.prototype.addPage = function (page) {
       this.pages.push(page);
       this.items.push(page);
-      this.childUL.appendChild(page.elem);
-      this.folderHeader.classList.add('hasPages');
+      this.reporter.ui.addPage(this, page);
     };
 
     Folder.prototype.disableTest = function (re, opt_forceRecurse) {
       var recurse = true;
       if (this.name.match(re)) {
-        this.check.checked = false;
+        this.reporter.ui.setFolderChecked(this, false);
         recurse = opt_forceRecurse;
       }
       if (recurse) {
@@ -687,7 +800,7 @@ function start() {
     };
 
     Folder.prototype.enableUp_ = function () {
-      this.check.checked = true;
+      this.reporter.ui.setFolderChecked(this, true);
       var parent = this.folder;
       if (parent) {
         parent.enableUp_();
@@ -708,15 +821,10 @@ function start() {
 
     var Reporter = function (iframes) {
       this.localDoc = document;
-      this.resultElem = document.getElementById("results");
-      this.fullResultsElem = document.getElementById("fullresults");
-      var node = this.localDoc.createTextNode('');
-      this.fullResultsElem.appendChild(node);
-      this.fullResultsNode = node;
       this.iframes = iframes;
-      this.currentPageElem = null;
       this.totalPages = 0;
       this.pagesByURL = {};
+      this.ui = new DefaultUI(this.localDoc);
 
       // Check to see if WebGL is supported
       var canvas = document.createElement("canvas");
@@ -743,10 +851,11 @@ function start() {
 
       this.contextInfo = {};
       this.root = new Folder(this, null, 0, "all");
-      this.resultElem.appendChild(this.root.elem);
       this.callbacks = {};
       this.startTime = 0;
 
+      this.ui.initializeReporter(this);
+      
       if (ctx) {
         this.contextInfo["VENDOR"] = ctx.getParameter(ctx.VENDOR);
         this.contextInfo["VERSION"] = ctx.getParameter(ctx.VERSION);
