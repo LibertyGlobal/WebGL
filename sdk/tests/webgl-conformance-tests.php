@@ -200,10 +200,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   .timeout { }
   .success { }
   .fail { }
-  .testpagesuccess { background-color: #8F8; }
-  .testpagefail { background-color: #F88; }
-  .testpageskipped { background-color: #888; }
-  .testpagetimeout { background-color: #FC8; }
+  .testpage.testpagesuccess { background-color: #8F8; }
+  .testpage.testpagefail { background-color: #F88; }
+  .testpage.testpageskipped { background-color: #888; }
+  .testpage.testpagetimeout { background-color: #FC8; }
   .nowebgl { font-weight: bold; color: red; }
   #error-wrap {
       float: left;
@@ -220,6 +220,45 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   ul {
     list-style: none;
     padding-left: 1em;
+  }
+  
+  .testpage {
+    background-color: #DDD;
+  }
+  .testpage-torun {
+    background-color: #FFF;
+  }
+  
+  .miniUI ul {
+    padding: 0;
+    margin: 0;
+  }
+  .miniUI .folder {
+    margin: 0;
+  }
+  .miniUI .folder.hasPages {
+    /*float: left;*/
+    margin-right: 1em;
+    margin-bottom: 1em;
+  }
+  .miniUI .folder .folderHeader {
+    display: none;
+  }
+  .miniUI .folder.hasPages .folderHeader {
+    display: block;
+  }
+  .miniUI .testpage { 
+    float: left;
+    border-width: 1px;
+    padding: 0.7em;
+    margin-bottom: 1em;
+    
+    -webkit-transition: none;
+    -moz-transition: none;
+    transition: none;
+  }
+  .miniUI .testpage:last-child { 
+    margin-right: 1em;
   }
 </style>
 <script type="application/javascript" src="js/webgl-test-harness.js"></script>
@@ -575,6 +614,158 @@ function start() {
       };
     };
     
+    var MiniUI = function (localDoc) {
+      this.localDoc = localDoc;
+      this.pages = {};
+      this.folders = {};
+      this.reporterUI = {};
+    };
+    
+    MiniUI.prototype.createElement = function (tag) {
+      return this.localDoc.createElement(tag);
+    };
+    
+    MiniUI.prototype.createTextNode = function (data) {
+      return this.localDoc.createTextNode(data);
+    };
+    
+    MiniUI.prototype.initializePage = function (pageObj) {
+      var url = pageObj.url;
+      var li = this.createElement('li');
+      li.id = pageObj.elementId;
+      var div = this.createElement('div');
+      div.classList.add('pageHeader');
+      var a = this.createElement('a');
+      a.href = WebGLTestHarnessModule.getURLWithOptions(url, {
+        webglVersion: pageObj.reporter.selectedWebGLVersion,
+        quiet: OPTIONS.quiet
+      });
+      a.title = url;
+      a.target = "_blank";
+      div.appendChild(a);
+      li.setAttribute('class', 'testpage');
+      li.appendChild(div);
+      
+      this.pages[pageObj.elementId] = {
+        elem: li,
+        checked: true
+      };
+    };
+    
+    MiniUI.prototype.addResult = function (pageObj, msg, success, skipped) {
+    };
+
+    MiniUI.prototype.pageChecked = function (pageObj) {
+      return this.pages[pageObj.elementId].checked;
+    };
+
+    MiniUI.prototype.setChecked = function (pageObj, value) {
+      this.pages[pageObj.elementId].checked = value;
+    };
+
+    MiniUI.prototype.startPage = function (pageObj, shouldRun) {
+      var ui = this.pages[pageObj.elementId];
+
+      if (shouldRun) {
+        ui.elem.classList.remove('testpagetimeout');
+        ui.elem.classList.remove('testpageskipped');
+        ui.elem.classList.remove('testpagefail');
+        ui.elem.classList.remove('testpagesuccess');
+      }
+    };
+    
+    MiniUI.prototype.finishPage = function (pageObj, success) {
+      var ui = this.pages[pageObj.elementId];
+      
+      if (pageObj.totalSkipped) {
+        var msg = ' (' + pageObj.totalSkipped + ' of ' + pageObj.totalTests + ' skipped in ' + pageObj.totalTime.toFixed(1) + ' ms )';
+      } else {
+        var msg = ' (' + pageObj.totalSuccessful + ' of ' + pageObj.totalTests + ' passed in ' + pageObj.totalTime.toFixed(1) + ' ms )';
+      }
+
+      if (success === undefined) {
+        var css = 'testpagetimeout';
+        msg = '(*timeout*)';
+      } else if (pageObj.totalSkipped) {
+        var css = 'testpageskipped';
+      } else if (pageObj.totalSuccessful != pageObj.totalTests) {
+        var css = 'testpagefail';
+      } else {
+        var css = 'testpagesuccess';
+      }
+      
+      ui.elem.classList.add(css);
+    };
+    
+    MiniUI.prototype.markPageToRun = function (pageObj, value) {
+      var ui = this.pages[pageObj.elementId];
+      if (value) {
+        ui.elem.classList.add('testpage-torun');
+      } else {
+        ui.elem.classList.remove('testpage-torun');
+      }
+    };    
+
+    MiniUI.prototype.initializeFolder = function (folderObj) {
+      var li = this.createElement('li');
+      li.id = folderObj.elementId;
+      li.classList.add("folder");
+      li.title = folderObj.displayName;
+      
+      var ul = this.createElement('ul');
+      li.appendChild(ul);
+      
+      this.folders[folderObj.elementId] = {
+        childUL: ul,
+        elem: li,
+        checked: true
+      };
+    };
+    
+    MiniUI.prototype.folderChecked = function (folderObj) {
+      return this.folders[folderObj.elementId].checked;
+    };
+
+    MiniUI.prototype.setFolderChecked = function (folderObj, value) {
+      this.folders[folderObj.elementId].checked = value;
+    };
+    
+    MiniUI.prototype.runFolder = function (folderObj) {
+    };
+
+    MiniUI.prototype.folderPageFinished = function (folderObj, page, success) {
+    };
+
+    MiniUI.prototype.addSubFolder = function (folderObj, subFolderObj) {
+      var folderUI = this.folders[folderObj.elementId], subFolderUI = this.folders[subFolderObj.elementId];
+      folderUI.childUL.appendChild(subFolderUI.elem);
+    };
+
+    MiniUI.prototype.addPage = function (folderObj, pageObj) {
+      var folderUI = this.folders[folderObj.elementId], pageUI = this.pages[pageObj.elementId];
+      folderUI.childUL.appendChild(pageUI.elem);
+      folderUI.elem.classList.add('hasPages');
+    };
+
+    MiniUI.prototype.initializeReporter = function (reporterObj) {
+      var resultElem = document.getElementById("results");
+      var fullResultsElem = document.getElementById("fullresults");
+      var node = this.localDoc.createTextNode('');
+      fullResultsElem.appendChild(node);
+      var fullResultsNode = node;
+      
+      var rootUI = this.folders[reporterObj.root.elementId];
+      resultElem.appendChild(rootUI.elem);
+      resultElem.classList.add('miniUI');
+      
+      this.reporterUI = {
+        resultElem: resultElem,
+        fullResultsElem: fullResultsElem,
+        fullResultsNode: fullResultsNode,
+        currentPageElem: null
+      };
+    };
+    
     var Page = function (reporter, folder, testIndex, url) {
       this.reporter = reporter;
       this.folder = folder;
@@ -691,6 +882,11 @@ function start() {
     Page.prototype.checked = function () {
       return this.reporter.ui.pageChecked(this);
     };
+    
+    Page.prototype.markToRun = function (value) {
+      this.reporter.ui.markPageToRun(this, value);
+    };
+    
     
     var Folder = function (reporter, folder, depth, opt_name) {
       this.reporter = reporter;
@@ -819,12 +1015,13 @@ function start() {
       }
     };
 
-    var Reporter = function (iframes) {
+    var Reporter = function (iframes, UiClass) {
       this.localDoc = document;
       this.iframes = iframes;
       this.totalPages = 0;
       this.pagesByURL = {};
-      this.ui = new DefaultUI(this.localDoc);
+      this.pagesByOrder = [];
+      this.ui = new UiClass(this.localDoc);
 
       // Check to see if WebGL is supported
       var canvas = document.createElement("canvas");
@@ -916,6 +1113,7 @@ function start() {
       folder.addPage(page);
       ++this.totalPages;
       this.pagesByURL[url] = page;
+      this.pagesByOrder.push(page);
     };
 
     Reporter.prototype.startPage = function (url) {
@@ -1111,6 +1309,19 @@ function start() {
       }
       ;
     };
+    
+    Reporter.prototype.markPagesToRun = function (runOptions) {
+        var pages_start = runOptions.start || 0;
+        var pages_count = runOptions.count || this.pagesByOrder.length;
+        for (var i = 0; i < this.pagesByOrder.length; i++) {
+          var page = this.pagesByOrder[i];
+          if (i >= pages_start && i < (pages_start + pages_count)) {
+            page.markToRun(true);
+          } else {
+            page.markToRun(false);
+          }
+        }
+    };
 
     var getURLOptions = function (obj) {
       var s = window.location.href;
@@ -1267,8 +1478,15 @@ function start() {
     if (OPTIONS.root) {
       testPath = OPTIONS.root + "/" + testPath;
     }
+    
+    var uiClassList = {
+      'mini': MiniUI
+    };
+    
+    var uiClassName = OPTIONS.ui || 'default';
+    var uiClass = (uiClassName in uiClassList) ? uiClassList[uiClassName] : DefaultUI;
 
-    var reporter = new Reporter(iframes);
+    var reporter = new Reporter(iframes, uiClass);
     var testHarness = new WebGLTestHarnessModule.TestHarness(
             iframes,
             testPath,
@@ -1295,6 +1513,7 @@ function start() {
       // Auto run the tests if the run=1 in URL
       if (OPTIONS.run != undefined && OPTIONS.run != 0) {
         reporter.postTestStartToServer();
+        reporter.markPagesToRun(runOptions);
         testHarness.runTests(runOptions);
       }
     });
@@ -1304,6 +1523,7 @@ function start() {
     button.onclick = function () {
       autoScroll = autoScrollEnabled;
       reporter.postTestStartToServer();
+      reporter.markPagesToRun(runOptions);
       testHarness.runTests(runOptions);
     };
     var autoScrollCheckbox = document.getElementById("autoScrollCheckbox");
