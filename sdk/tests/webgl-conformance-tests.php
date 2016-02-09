@@ -1074,6 +1074,7 @@ function start() {
       this.root = new Folder(this, null, 0, "all");
       this.callbacks = {};
       this.startTime = 0;
+      this.startDate = null;
 
       this.ui.initializeReporter(this);
       
@@ -1240,7 +1241,7 @@ function start() {
         this.ui.setReporterText(this, tx);
 
         sendReport('finishTest:success', {
-          startTime: new Date(this.startTime).toUTCString(),
+          startTime: this.startDate.toUTCString(),
           totalTime: totalTime,
           totalTests: totalTests,
           totalSuccessful: totalSuccessful,
@@ -1254,7 +1255,7 @@ function start() {
         e.innerHTML = msg;
         
         sendReport('finishTest:error', {
-          startTime: new Date(this.startTime).toUTCString(),
+          startTime: this.startDate.toUTCString(),
           msg: msg.substr(0, 20000)
         });
         
@@ -1264,6 +1265,7 @@ function start() {
 
     Reporter.prototype.postTestStartToServer = function (resultText) {
       this.startTime = timer.getMillis();
+      this.startDate = new Date();
       
       var testPages = [], pbo = this.pagesByOrder;
       for (var i = 0; i < pbo.length; i++) {
@@ -1274,7 +1276,7 @@ function start() {
       }
       
       sendReport('startTest', {
-        startTime: new Date(this.startTime).toUTCString(),
+        startTime: this.startDate.toUTCString(),
         start: (runOptions && runOptions.start) || 0,
         count: (runOptions && runOptions.count) || 0,
         totalCount: testHarness.files.length,
