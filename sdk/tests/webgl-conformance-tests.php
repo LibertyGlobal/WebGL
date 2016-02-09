@@ -610,8 +610,20 @@ function start() {
         resultElem: resultElem,
         fullResultsElem: fullResultsElem,
         fullResultsNode: fullResultsNode,
+        testResultsTextElem: this.localDoc.getElementById("testResultsAsText"),
+        showTextSummaryElem: this.localDoc.getElementById("showTextSummary"),
         currentPageElem: null
       };
+    };
+    DefaultUI.prototype.setReporterMessage = function (reporterObj, msg) {
+      this.reporterUI.fullResultsNode.textContent = msg;
+    };
+    DefaultUI.prototype.setReporterText = function (reporterObj, tx) {
+      var r = this.reporterUI.testResultsTextElem;
+      while (r.firstChild)
+        r.removeChild(r.firstChild);
+      r.appendChild(this.createTextNode(tx));
+      this.reporterUI.showTextSummaryElem.style.visibility = "visible";
     };
     
     var MiniUI = function (localDoc) {
@@ -762,8 +774,20 @@ function start() {
         resultElem: resultElem,
         fullResultsElem: fullResultsElem,
         fullResultsNode: fullResultsNode,
+        testResultsTextElem: this.localDoc.getElementById("testResultsAsText"),
+        showTextSummaryElem: this.localDoc.getElementById("showTextSummary"),
         currentPageElem: null
       };
+    };
+    MiniUI.prototype.setReporterMessage = function (reporterObj, msg) {
+      this.reporterUI.fullResultsNode.textContent = msg;
+    };
+    MiniUI.prototype.setReporterText = function (reporterObj, tx) {
+      var r = this.reporterUI.testResultsTextElem;
+      while (r.firstChild)
+        r.removeChild(r.firstChild);
+      r.appendChild(this.createTextNode(tx));
+      this.reporterUI.showTextSummaryElem.style.visibility = "visible";
     };
     
     var Page = function (reporter, folder, testIndex, url) {
@@ -1156,7 +1180,7 @@ function start() {
         }
         var msg = ' (' + totalSuccessful + ' of ' +
                 totalTests + ' passed' + timeout + ')';
-        this.fullResultsNode.textContent = msg;
+        this.ui.setReporterMessage(this, msg);
 
         // generate a text summary
         var tx = "";
@@ -1213,11 +1237,7 @@ function start() {
         tx += "-------------------\n\n";
         tx += "Generated on: " + (new Date()).toString() + "\n";
 
-        var r = document.getElementById("testResultsAsText");
-        while (r.firstChild)
-          r.removeChild(r.firstChild);
-        r.appendChild(document.createTextNode(tx));
-        document.getElementById("showTextSummary").style.visibility = "visible";
+        this.ui.setReporterText(this, tx);
 
         sendReport('finishTest:success', {
           startTime: new Date(this.startTime).toUTCString(),
