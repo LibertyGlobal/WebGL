@@ -1265,6 +1265,14 @@ function start() {
     Reporter.prototype.postTestStartToServer = function (resultText) {
       this.startTime = timer.getMillis();
       
+      var testPages = [], pbo = this.pagesByOrder;
+      for (var i = 0; i < pbo.length; i++) {
+        testPages.push({
+          url: pbo[i].url,
+          pageNo: pbo[i].testIndex
+        });
+      }
+      
       sendReport('startTest', {
         startTime: new Date(this.startTime).toUTCString(),
         start: (runOptions && runOptions.start) || 0,
@@ -1274,7 +1282,8 @@ function start() {
         timeoutDelay: testHarness.timeoutDelay,
         context: this.contextInfo,
         userAgent: navigator.userAgent,
-        platform: navigator.platform
+        platform: navigator.platform,
+        testPages: testPages
       });
       
       if (OPTIONS.postResults == undefined || OPTIONS.postResults == 0) {
