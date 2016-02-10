@@ -341,7 +341,10 @@ function start() {
       };
       xhr.send(JSON.stringify(report));
     }
-    sendReport.prototype.runID = Date.now() & 0x7FFFFFFF;
+    sendReport.prototype.startRun = function() {
+      sendReport.prototype.runID = Date.now() & 0x7FFFFFFF;
+    };
+    sendReport.prototype.startRun();
 
     var Timer = function () {
       this.startT = 0;
@@ -1266,7 +1269,7 @@ function start() {
     Reporter.prototype.postTestStartToServer = function (resultText) {
       this.startTime = timer.getMillis();
       this.startDate = new Date();
-      
+
       var testPages = [], pbo = this.pagesByOrder;
       for (var i = 0; i < pbo.length; i++) {
         testPages.push({
@@ -1275,6 +1278,7 @@ function start() {
         });
       }
       
+      sendReport.prototype.startRun();
       sendReport('startTest', {
         startTime: this.startDate.toUTCString(),
         start: (runOptions && runOptions.start) || 0,
