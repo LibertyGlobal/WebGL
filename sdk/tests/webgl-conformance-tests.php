@@ -875,7 +875,7 @@ function start() {
         ++this.totalTests;
         ++this.totalTimeouts;
         
-        this.results.push({msg: msg, success: "timeout"});
+        this.results.push({msg: '(*timeout*)', success: "timeout"});
       }
       
       sendReport('finishPage', {
