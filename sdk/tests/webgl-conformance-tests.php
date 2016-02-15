@@ -348,7 +348,7 @@ function start() {
 
     var Timer = function () {
       this.startT = 0;
-    }
+    };
     
     Timer.prototype.now = (function () {
       var performance = window.performance || {};
@@ -968,7 +968,7 @@ function start() {
       this.reporter.ui.runFolder(this);
       var firstTestIndex = this.firstTestIndex();
       var count = this.numChildren();
-      log("run tests: " + firstTestIndex + " to " + (firstTestIndex + count - 1))
+      log("run tests: " + firstTestIndex + " to " + (firstTestIndex + count - 1));
       testHarness.runTests({start: firstTestIndex, count: count});
     };
 
@@ -1028,7 +1028,7 @@ function start() {
       if (parent) {
         parent.enableUp_();
       }
-    }
+    };
 
     Folder.prototype.enableTest = function (re) {
       if (this.name.match(re)) {
@@ -1416,7 +1416,7 @@ function start() {
       versionSelect.addEventListener('change', function (ev) {
         window.location.href = "?version=" + versionSelect.value;
       }, false);
-    }
+    };
 
     makeVersionSelect(OPTIONS.version);
     
@@ -1533,14 +1533,14 @@ function start() {
       // Set which tests to include.
       if (OPTIONS.include) {
         reporter.disableAllTests();
-        var includes = OPTIONS.include.split(",")
+        var includes = OPTIONS.include.split(",");
         for (var ii = 0; ii < includes.length; ++ii) {
           reporter.enableTest(new RegExp(includes[ii]));
         }
       }
       // Remove tests based on skip=re1,re2 in URL.
       if (OPTIONS.skip) {
-        var skips = OPTIONS.skip.split(",")
+        var skips = OPTIONS.skip.split(",");
         for (var ii = 0; ii < skips.length; ++ii) {
           reporter.disableTest(new RegExp(skips[ii]));
         }
