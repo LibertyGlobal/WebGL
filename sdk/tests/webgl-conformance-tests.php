@@ -272,7 +272,7 @@ var DEFAULT_CONFORMANCE_TEST_VERSION = "1.0.4 (beta)";
 var OPTIONS = {
   version: DEFAULT_CONFORMANCE_TEST_VERSION,
   frames: 1,
-  allowSkip: 0,
+  allowSkip: 1,
   root: null,
   quiet: 0
 };
@@ -479,9 +479,24 @@ function start() {
     };
 
     DefaultUI.prototype.setChecked = function (pageObj, value) {
-      this.pages[pageObj.elementId].check.checked = value;
+      var ui = this.pages[pageObj.elementId];
+      ui.check.checked = value;
+      if (value) {
+        ui.elem.classList.remove('testpage-toskip');
+      } else {
+        ui.elem.classList.add('testpage-toskip');
+      }
     };
 
+    DefaultUI.prototype.markPageToRun = function (pageObj, value) {
+      var ui = this.pages[pageObj.elementId];
+      if (value) {
+        ui.elem.classList.add('testpage-torun');
+      } else {
+        ui.elem.classList.remove('testpage-torun');
+      }
+    };    
+    
     DefaultUI.prototype.startPage = function (pageObj, shouldRun) {
       var ui = this.pages[pageObj.elementId];
       if (autoScroll && ui.elem.scrollIntoView) {
@@ -1367,8 +1382,8 @@ function start() {
         }
     };
 
-    var getURLOptions = function (obj) {
-      var s = window.location.href;
+    var tokenizeURL = function (opt_url) {
+      var s = (opt_url !== undefined) ? opt_url : window.location.href;
       var q = s.indexOf("?");
       var e = s.indexOf("#");
       if (e < 0) {
@@ -1376,15 +1391,39 @@ function start() {
       }
       var query = s.substring(q + 1, e);
       var pairs = query.split("&");
+      var tokens = [];
       for (var ii = 0; ii < pairs.length; ++ii) {
         var keyValue = pairs[ii].split("=");
         var key = keyValue[0];
         var value = decodeURIComponent(keyValue[1]);
-        obj[key] = value;
+        tokens.push({key: key, value: value});
+      }
+      return tokens;
+    };
+
+    var getURLOptions = function (obj, url_tokens) {
+      for (var ii = 0; ii < url_tokens.length; ++ii) {
+        var keyValue = url_tokens[ii];
+        obj[keyValue.key] = keyValue.value;
       }
     };
 
-    getURLOptions(OPTIONS);
+    var getIncludesExcludes = function (url_tokens) {
+      var sequence = [];
+      for (var ii = 0; ii < url_tokens.length; ++ii) {
+        var keyValue = url_tokens[ii];
+        if (keyValue.key == 'include' || keyValue.key == 'skip') {
+          var parts = keyValue.value.split(',');
+          for (var jj = 0; jj < parts.length; ++jj) {
+            sequence.push([keyValue.key, parts[jj]]);
+          }
+        }
+      }
+      return sequence;
+    };
+
+    var url_tokens = tokenizeURL();
+    getURLOptions(OPTIONS, url_tokens);
     
     if (OPTIONS.suiteID !== undefined && OPTIONS.suiteID != 0) {
       var suiteID = parseInt(OPTIONS.suiteID);
@@ -1539,19 +1578,18 @@ function start() {
             },
             OPTIONS);
     reporter.addEventListener("ready", function () {
-      // Set which tests to include.
-      if (OPTIONS.include) {
-        reporter.disableAllTests();
-        var includes = OPTIONS.include.split(",");
-        for (var ii = 0; ii < includes.length; ++ii) {
-          reporter.enableTest(new RegExp(includes[ii]));
-        }
-      }
-      // Remove tests based on skip=re1,re2 in URL.
-      if (OPTIONS.skip) {
-        var skips = OPTIONS.skip.split(",");
-        for (var ii = 0; ii < skips.length; ++ii) {
-          reporter.disableTest(new RegExp(skips[ii]));
+      var includes_skips = getIncludesExcludes(url_tokens);
+      for (var ii = 0; ii < includes_skips.length; ++ii) {
+        var action = includes_skips[ii][0], value = includes_skips[ii][1];
+        if (action === 'include') {
+          // Set which tests to include.
+          if (ii === 0) {
+            reporter.disableAllTests();
+          }
+          reporter.enableTest(new RegExp(value));
+        } else if (action === 'skip') {
+          // Remove tests based on skip=re1,re2 in URL.
+          reporter.disableTest(new RegExp(value));
         }
       }
       // Mark which pages are to be included in this test run
