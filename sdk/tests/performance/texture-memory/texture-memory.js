@@ -6,9 +6,11 @@ var WebGLTextureMemoryTests = (function() {
   var simpleVertexShader = [    
     'attribute vec4 aVertexPosition;',
     'attribute vec2 aTextureCoord;',
+    'uniform vec3 uVertexOffset;',
+    'uniform float uScale;',
     'varying vec2 vTextureCoord;',
     'void main(void) {',
-    '  gl_Position   = aVertexPosition;',
+    '  gl_Position   = vec4(aVertexPosition.xyz * uScale + uVertexOffset.xyz, aVertexPosition.w);',
     '  vTextureCoord = aTextureCoord;',
     '}'
   ].join('\n');
@@ -94,10 +96,30 @@ var WebGLTextureMemoryTests = (function() {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
   };
   
+  var forEachInGrid = function(gridX, gridY, callbackFn) {
+    var gridScaleX = 1.0 / gridX;
+    var gridStartX = -1.0 + gridScaleX;
+    var gridStepX = 2 * gridScaleX;
+    var gridScaleY = 1.0 / gridY;
+    var gridStartY = -1.0 + gridScaleY;
+    var gridStepY = 2 * gridScaleY;
+    
+    var index = 0;
+    for (var yy = 0; yy < gridY; yy++) {
+      for (var xx = 0; xx < gridX; xx++) {
+        var posX = gridStartX + xx * gridStepX;
+        var posY = gridStartY + yy * gridStepY;
+        callbackFn(posX, posY, xx, yy, index);
+        index++;
+      }
+    }
+  };
+  
   return {
     buildTexturedIndexedQuad: buildTexturedIndexedQuad,
     createStandardTexture: createStandardTexture,
     uploadTexture: uploadTexture,
+    forEachInGrid: forEachInGrid,
     simpleVertexShader: simpleVertexShader,
     simpleFragmentShader: simpleFragmentShader
   };

@@ -42,9 +42,10 @@
 <div id="console"></div>
 <script type="text/javascript">
 "use strict";
-description("Uploads and draws a texture many times per frame");
+description("Draws many quads per frame, each with a separate texture");
 
 var CRATE_IMAGE_URL = 'crate-256.jpg';
+var GRIDSIZE = 8;
 WebGLPerformanceUtils.runTest({
   numFrames: 1000,
   vShaderSource: WebGLTextureMemoryTests.simpleVertexShader,
@@ -62,20 +63,25 @@ WebGLPerformanceUtils.runTest({
     var shader_uScale = program.uniforms['uScale'].location;
     
     var image = images[CRATE_IMAGE_URL];
-    var textureID = WebGLTextureMemoryTests.createStandardTexture(gl);
+    var textures = [];
+    WebGLTextureMemoryTests.forEachInGrid(GRIDSIZE, GRIDSIZE, function(posX, posY, xx, yy, index) {
+      var textureID = WebGLTextureMemoryTests.createStandardTexture(gl);
+      WebGLTextureMemoryTests.uploadTexture(gl, textureID, image);
+      textures.push(textureID);
+    });
     
     var quad = WebGLTextureMemoryTests.buildTexturedIndexedQuad(gl);
     
     return function(gl, program, images, info) { 
       for (var i = 0; i < 32; i++) {
-        // upload the texture
-        WebGLTextureMemoryTests.uploadTexture(gl, textureID, image);
-
         // draw the quad
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        gl.uniform3f(shader_uVertexOffset, 0, 0, 0);
-        gl.uniform1f(shader_uScale, 0.5);
-        quad.draw(textureID, shader_aVertexPosition, shader_aTextureCoord);
+        gl.uniform1f(shader_uScale, 1.0 / GRIDSIZE);
+        WebGLTextureMemoryTests.forEachInGrid(GRIDSIZE, GRIDSIZE, function(posX, posY, xx, yy, index) {
+          // draw the quad
+          gl.uniform3f(shader_uVertexOffset, posX, posY, 0);
+          quad.draw(textures[index], shader_aVertexPosition, shader_aTextureCoord);
+        });
       }
     };
 });

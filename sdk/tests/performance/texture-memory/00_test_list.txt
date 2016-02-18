@@ -1,1 +1,3 @@
 texture-upload-test.html
+texture-many-draw-calls-single-texture.html
+texture-many-draw-calls-many-textures.html
