@@ -1,0 +1,82 @@
+<!--
+
+/*
+** Copyright (c) 2014 The Khronos Group Inc.
+**
+** Permission is hereby granted, free of charge, to any person obtaining a
+** copy of this software and/or associated documentation files (the
+** "Materials"), to deal in the Materials without restriction, including
+** without limitation the rights to use, copy, modify, merge, publish,
+** distribute, sublicense, and/or sell copies of the Materials, and to
+** permit persons to whom the Materials are furnished to do so, subject to
+** the following conditions:
+**
+** The above copyright notice and this permission notice shall be included
+** in all copies or substantial portions of the Materials.
+**
+** THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+** EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+** MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+** IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+** CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+** TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+** MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
+*/
+
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>WebGL texture memory test</title>
+<link rel="stylesheet" href="../../resources/js-test-style.css"/>
+<script src="../../js/js-test-pre.js"></script>
+<script src="../../js/webgl-test-utils.js"></script>
+<script src="../resources/webgl-performance-utils.js"></script>
+<script src="texture-memory.js"></script>
+</head>
+<body>
+<canvas id="canvas" width="512" height="512" style="width: 512px; height: 512px;"></canvas>
+<div id="description"></div>
+<div id="console"></div>
+<script type="text/javascript">
+"use strict";
+description();
+
+var CRATE_IMAGE_URL = 'crate-256.jpg';
+WebGLPerformanceUtils.runTest({
+  numFrames: 1000,
+  vShaderSource: WebGLTextureMemoryTests.simpleVertexShader,
+  fShaderSource: WebGLTextureMemoryTests.simpleFragmentShader,
+  images: [
+    CRATE_IMAGE_URL
+  ]}, 
+  function(gl, program, images, info) {
+    gl.clearColor(0.0, 0.5, 0.25, 1.0);
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    
+    var shader_aVertexPosition = program.attributes['aVertexPosition'].location;
+    var shader_aTextureCoord = program.attributes['aTextureCoord'].location;
+    
+    var image = images[CRATE_IMAGE_URL];
+    var textureID = WebGLTextureMemoryTests.createStandardTexture(gl);
+    
+    var quad = WebGLTextureMemoryTests.buildTexturedIndexedQuad(gl);
+    
+    return function(gl, program, images, info) { 
+      for (var i = 0; i < 32; i++) {
+        // upload the texture
+        WebGLTextureMemoryTests.uploadTexture(gl, textureID, image);
+
+        // draw the quad
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        quad.draw(textureID, shader_aVertexPosition, shader_aTextureCoord);
+      }
+    };
+});
+
+var successfullyParsed = true;
+</script>
+</body>
+</html>
