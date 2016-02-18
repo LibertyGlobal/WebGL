@@ -705,6 +705,10 @@ function start() {
     MiniUI.prototype.startPage = function (pageObj, shouldRun) {
       var ui = this.pages[pageObj.elementId];
 
+      if (autoScroll && ui.elem.scrollIntoView) {
+        ui.elem.scrollIntoView(false);
+      }
+      
       if (shouldRun) {
         ui.elem.classList.remove('testpagetimeout');
         ui.elem.classList.remove('testpageskipped');
