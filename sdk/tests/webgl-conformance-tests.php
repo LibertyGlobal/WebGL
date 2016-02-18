@@ -228,6 +228,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   .testpage-torun {
     background-color: #FFF;
   }
+  .testpage-toskip { 
+    background-color: #AAA; 
+  }
   
   .miniUI ul {
     padding: 0;
@@ -675,7 +678,13 @@ function start() {
     };
 
     MiniUI.prototype.setChecked = function (pageObj, value) {
-      this.pages[pageObj.elementId].checked = value;
+      var ui = this.pages[pageObj.elementId];
+      ui.checked = value;
+      if (value) {
+        ui.elem.classList.remove('testpage-toskip');
+      } else {
+        ui.elem.classList.add('testpage-toskip');
+      }
     };
 
     MiniUI.prototype.startPage = function (pageObj, shouldRun) {
