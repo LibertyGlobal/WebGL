@@ -580,9 +580,14 @@ TestHarness.prototype.startNextTest = function() {
                     '', '', true);
   } else {
     while (this.testsToRun.length > 0 && this.idleIFrames.length > 0) {
-      var testId = this.testsToRun.shift();
-      var iframe = this.idleIFrames.shift();
-      this.startTest(iframe, this.files[testId], this.webglVersion);
+      var startTestFn = (function(self) {
+        var testId = self.testsToRun.shift();
+        var iframe = self.idleIFrames.shift();
+        return function() {
+          self.startTest(iframe, self.files[testId], self.webglVersion);
+        };
+      })(this);
+      setTimeout(startTestFn, 0);
     }
   }
 };
