@@ -1545,10 +1545,11 @@ function start() {
           reporter.disableTest(new RegExp(skips[ii]));
         }
       }
+      // Mark which pages are to be included in this test run
+      reporter.markPagesToRun(runOptions);
       // Auto run the tests if the run=1 in URL
       if (OPTIONS.run != undefined && OPTIONS.run != 0) {
         reporter.postTestStartToServer();
-        reporter.markPagesToRun(runOptions);
         testHarness.runTests(runOptions);
       }
     });
@@ -1558,7 +1559,6 @@ function start() {
     button.onclick = function () {
       autoScroll = autoScrollEnabled;
       reporter.postTestStartToServer();
-      reporter.markPagesToRun(runOptions);
       testHarness.runTests(runOptions);
     };
     var autoScrollCheckbox = document.getElementById("autoScrollCheckbox");
