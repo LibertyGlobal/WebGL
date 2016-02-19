@@ -389,6 +389,10 @@ function start() {
       return stopT - this.startT;
     };
     
+    var filterPath = function(path, filter) {
+      return path.indexOf(filter) !== -1;
+    };
+    
     var reportType = WebGLTestHarnessModule.TestHarness.reportType;
     var pageCount = 0;
     var folderCount = 0;
@@ -919,14 +923,14 @@ function start() {
     };
 
     Page.prototype.enableTest = function (re) {
-      if (this.url.match(re)) {
+      if (filterPath(this.url, re)) {
         this.reporter.ui.setChecked(this, true);
         this.folder.enableUp_();
       }
     };
 
     Page.prototype.disableTest = function (re) {
-      if (this.url.match(re)) {
+      if (filterPath(this.url, re)) {
         this.reporter.ui.setChecked(this, false);
       }
     };
@@ -1033,7 +1037,7 @@ function start() {
 
     Folder.prototype.disableTest = function (re, opt_forceRecurse) {
       var recurse = true;
-      if (this.name.match(re)) {
+      if (filterPath(this.name, re)) {
         this.reporter.ui.setFolderChecked(this, false);
         recurse = opt_forceRecurse;
       }
@@ -1056,7 +1060,7 @@ function start() {
     };
 
     Folder.prototype.enableTest = function (re) {
-      if (this.name.match(re)) {
+      if (filterPath(this.name, re)) {
         this.enableUp_();
       }
       for (var name in this.subFolders) {
@@ -1129,8 +1133,8 @@ function start() {
       this.root.enableTest(name);
     };
 
-    Reporter.prototype.disableTest = function (name) {
-      this.root.disableTest(name);
+    Reporter.prototype.disableTest = function (name, opt_forceRecurse) {
+      this.root.disableTest(name, opt_forceRecurse);
     };
 
     Reporter.prototype.disableAllTests = function () {
@@ -1596,10 +1600,10 @@ function start() {
           if (ii === 0) {
             reporter.disableAllTests();
           }
-          reporter.enableTest(new RegExp(value));
+          reporter.enableTest(value);
         } else if (action === 'skip') {
           // Remove tests based on skip=re1,re2 in URL.
-          reporter.disableTest(new RegExp(value));
+          reporter.disableTest(value, true);
         }
       }
       // Mark which pages are to be included in this test run
