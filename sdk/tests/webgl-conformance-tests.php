@@ -1573,6 +1573,15 @@ function start() {
     var uiClassName = OPTIONS.ui || 'default';
     var uiClass = (uiClassName in uiClassList) ? uiClassList[uiClassName] : DefaultUI;
 
+    var userAgent = (navigator.userAgent || '').trim();
+    var userAgentMatch = true;
+    if (OPTIONS.ua) {
+      var uaFilter = OPTIONS.ua.trim().toUpperCase();
+      if (userAgent.toUpperCase().indexOf(uaFilter) === -1) {
+        userAgentMatch = false;
+      }
+    }
+    
     var reporter = new Reporter(iframes, uiClass);
     var testHarness = new WebGLTestHarnessModule.TestHarness(
             iframes,
@@ -1599,7 +1608,7 @@ function start() {
       // Mark which pages are to be included in this test run
       reporter.markPagesToRun(runOptions);
       // Auto run the tests if the run=1 in URL
-      if (OPTIONS.run != undefined && OPTIONS.run != 0) {
+      if (OPTIONS.run != undefined && OPTIONS.run != 0 && userAgentMatch) {
         reporter.postTestStartToServer();
         testHarness.runTests(runOptions);
       }
@@ -1658,6 +1667,10 @@ function start() {
       elem.style.display = "";
       reporter.postResultsToServer("Browser does not appear to support the selected version of WebGL");
     }
+    if (!userAgentMatch) {
+      var elem = document.getElementById("useragentmismatch");
+      elem.style.display = "";
+    }
   }
 </script>
 </head>
@@ -1706,6 +1719,10 @@ function start() {
               </div>
               <div id="noselectedwebgl" class="nowebgl" style="display: none;">
                 This browser does not appear to support the selected version of WebGL
+              </div>
+              <div id="useragentmismatch" class="nowebgl" style="display: none;">
+                This test runner was not intended to run on this browser. If you wish to run it
+                anyway, press the &quot;run tests&quot; button.
               </div>
             </div>
           </td>
