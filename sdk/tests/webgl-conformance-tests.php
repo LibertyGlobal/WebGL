@@ -876,11 +876,8 @@ function start() {
       this.totalSuccessful = 0;
       this.totalTimeouts = 0;
       this.totalTime = 0;
+      this.startTime = timer.getMillis();
 
-      if (shouldRun) {
-        this.startTime = timer.getMillis();
-      }
-      
       this.reporter.ui.startPage(this, shouldRun);
       
       sendReport('startPage', {
